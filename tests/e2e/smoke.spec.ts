@@ -17,7 +17,8 @@ test('typing the current answer gives score and visual correct-key feedback', as
   const result = await driver.typeText(before.romaji);
 
   expect(result.score).toBeGreaterThan(0);
-  expect(result.typed).toBe(before.romaji);
+  expect(result.typed).toBe('');
+  expect(result.challengeId).not.toBe(before.challengeId);
   await expect(page.getByTestId(`key-${before.romaji.at(-1)}`)).toHaveClass(/correct/);
 });
 
@@ -45,4 +46,18 @@ test('persists unlocked progress in localStorage across reloads', async ({ page 
   await page.reload();
 
   await expect(page.locator('.stage-chip').nth(1)).not.toBeDisabled();
+});
+
+test('shows a clear stage-complete screen instead of another prompt', async ({ page }) => {
+  const driver = await createGameDriver(page);
+  let snapshot = await driver.snapshot();
+
+  while (snapshot.status === 'playing') {
+    snapshot = await driver.typeText(snapshot.romaji);
+  }
+
+  expect(snapshot.status).toBe('stage-complete');
+  await expect(page.getByTestId('kana-text')).toHaveText('クリア!');
+  await expect(page.getByTestId('hint-text')).toContainText('次のステージ');
+  await expect(page.getByTestId('next-button')).toHaveText('つぎのステージ');
 });

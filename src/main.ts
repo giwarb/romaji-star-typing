@@ -73,21 +73,32 @@ function render(): void {
   const progress = stageProgress(state);
 
   app.dataset.status = state.status;
-  kanaCard.dataset.result = state.lastMistake ? 'wrong' : state.lastCorrectKey ? 'correct' : 'idle';
+  kanaCard.dataset.result =
+    state.status === 'playing'
+      ? state.lastMistake
+        ? 'wrong'
+        : state.lastCorrectKey
+          ? 'correct'
+          : 'idle'
+      : 'complete';
   stageTitle.textContent = stage.name;
   stageDescription.textContent = stage.description;
   stageBadge.textContent = stage.badge;
-  kanaText.textContent = challenge.kana;
-  hintText.textContent = challenge.hint;
   messageText.textContent = state.message;
   scoreLabel.textContent = String(state.score);
   streakLabel.textContent = `${state.streak}`;
   mistakeLabel.textContent = `${state.mistakes}`;
-  stageProgressBar.style.inlineSize = `${Math.round(progress.stagePercent * 100)}%`;
-  courseProgressBar.style.inlineSize = `${Math.round(progress.coursePercent * 100)}%`;
+  stageProgressBar.style.width = `${Math.round(progress.stagePercent * 100)}%`;
+  courseProgressBar.style.width = `${Math.round(progress.coursePercent * 100)}%`;
   nextButton.textContent = state.status === 'playing' ? 'つぎの問題' : 'つぎのステージ';
 
-  renderRomaji(challenge.romaji, state.typed);
+  if (state.status === 'playing') {
+    kanaText.textContent = challenge.kana;
+    hintText.textContent = challenge.hint;
+    renderRomaji(challenge.romaji, state.typed);
+  } else {
+    renderCompletionCard();
+  }
   renderKeyboard();
   renderStages();
   burstStars();
@@ -103,6 +114,22 @@ function renderRomaji(target: string, typed: string): void {
       } else if (index === typed.length) {
         span.className = state.lastMistake ? 'next wrong-next' : 'next';
       }
+      return span;
+    }),
+  );
+}
+
+function renderCompletionCard(): void {
+  const courseDone = state.status === 'course-complete';
+  kanaText.textContent = courseDone ? 'マスター!' : 'クリア!';
+  hintText.textContent = courseDone
+    ? 'ぜんぶのステージを最後までがんばったね。'
+    : '次のステージに進めるよ。深呼吸してからいこう。';
+  romajiTarget.replaceChildren(
+    ...['★', '★', '★'].map((star) => {
+      const span = document.createElement('span');
+      span.className = 'typed';
+      span.textContent = star;
       return span;
     }),
   );

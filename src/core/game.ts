@@ -135,7 +135,7 @@ export function currentStage(state: GameState): Stage {
 
 export function currentChallenge(state: GameState): Challenge {
   const stage = currentStage(state);
-  const order = makeChallengeOrder(stage, state.seed + state.correctInStage);
+  const order = makeChallengeOrder(stage, state.seed + state.stageIndex);
   return getChallenge(stage, order[state.challengeIndex % order.length]);
 }
 
@@ -230,6 +230,8 @@ function completeChallenge(state: GameState): GameState {
     return {
       ...state,
       best,
+      typed: '',
+      challengeIndex: state.challengeIndex + 1,
       status: 'playing',
       message: `${state.message} 次もいけるよ。`,
     };
@@ -239,6 +241,7 @@ function completeChallenge(state: GameState): GameState {
   return {
     ...state,
     best,
+    typed: '',
     status: courseDone ? 'course-complete' : 'stage-complete',
     unlockedStage: Math.max(state.unlockedStage, state.stageIndex + (courseDone ? 0 : 1)),
     message: courseDone

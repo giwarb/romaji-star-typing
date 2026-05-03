@@ -24,7 +24,7 @@ describe('romaji typing game model', () => {
   });
 
   it('accepts correct typing and advances typed progress', () => {
-    const state = createInitialState({ seed: 1 });
+    const state = reduceGame(createInitialState({ seed: 1 }), { type: 'SET_STAGE', stageIndex: 1 });
     const challenge = currentChallenge(state);
     const result = typeKey(state, challenge.romaji[0]);
 
@@ -64,6 +64,20 @@ describe('romaji typing game model', () => {
     expect(state.status).toBe('stage-complete');
     expect(state.unlockedStage).toBe(1);
     expect(state.best.vowels).toBeGreaterThan(0);
+  });
+
+  it('clears typed text and advances immediately after a correct answer', () => {
+    let state = createInitialState({ seed: 1 });
+    const first = currentChallenge(state);
+
+    for (const key of first.romaji) {
+      state = typeKey(state, key);
+    }
+
+    expect(state.typed).toBe('');
+    expect(state.challengeIndex).toBe(1);
+    expect(currentChallenge(state).id).not.toBe(first.id);
+    expect(state.status).toBe('playing');
   });
 
   it('moves between stages and resets while keeping save data', () => {
