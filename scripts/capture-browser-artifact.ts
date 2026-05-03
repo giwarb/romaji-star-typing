@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
+import type { Browser } from '@playwright/test';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const port = 4174;
@@ -15,7 +16,7 @@ const server = spawn(
     stdio: 'ignore',
   },
 );
-let browser;
+let browser: Browser | undefined;
 
 try {
   await waitForServer(url);
@@ -39,7 +40,7 @@ try {
   server.kill();
 }
 
-async function waitForServer(targetUrl) {
+async function waitForServer(targetUrl: string): Promise<void> {
   const deadline = Date.now() + 120_000;
   while (Date.now() < deadline) {
     try {

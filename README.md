@@ -1,12 +1,13 @@
 # HTML Game AI Harness
 
-`html-game-ai-harness` is a browser-only game template for building small, robust HTML + JavaScript games with test-first development and an AI-operable Playwright harness.
+`html-game-ai-harness` is a browser-only game template for building small, robust HTML + TypeScript games with test-first development and an AI-operable Playwright harness.
 
 The included sample game, **Pulse Runner**, is intentionally small: move the player to the goal while avoiding hazards. The useful part is the harness around it.
 
 ## What This Template Gives You
 
-- Browser-only HTML + JavaScript app with Vite.
+- Browser-only HTML + TypeScript app with Vite.
+- Typed contracts for levels, actions, game state, snapshots, and `window.__GAME_HARNESS__`.
 - Game state and rules isolated as pure functions under `src/core`.
 - `localStorage` persistence isolated under `src/platform`.
 - Unit tests for deterministic state transitions.
@@ -34,6 +35,7 @@ Open the local URL printed by Vite.
 ```text
 src/core/        Pure game rules, levels, deterministic RNG
 src/platform/    Browser adapters such as localStorage
+src/global.d.ts  Browser harness global contract
 tests/unit/      Fast unit tests for stateless logic
 tests/e2e/       Playwright browser verification
 tests/harness/   AI-facing Playwright helpers

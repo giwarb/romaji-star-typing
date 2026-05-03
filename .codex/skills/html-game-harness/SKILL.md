@@ -15,7 +15,7 @@ Use this skill whenever modifying the game, levels, rendering, persistence, or t
 4. Add or update Vitest tests in `tests/unit` before changing behavior.
 5. Run `npm run eval:game` before and after hard level or algorithm changes.
 6. Keep DOM and storage code thin.
-7. Use `tests/harness/gameDriver.js` for Playwright tests.
+7. Use `tests/harness/gameDriver.ts` for Playwright tests.
 8. For visual changes, run `npm run artifact:browser` and inspect the screenshot.
 9. Log long-running iteration notes under `.logs/`.
 10. Save image generation prompts under `.prompts/`.

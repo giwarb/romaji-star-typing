@@ -21,7 +21,7 @@ The browser harness is intentionally small:
 - `reset(seedOrState?)` restores deterministic states.
 - `loadLevel(level)` verifies custom level design in the real UI.
 
-Playwright tests should use `tests/harness/gameDriver.js` instead of reaching directly into DOM details.
+Playwright tests should use `tests/harness/gameDriver.ts` instead of reaching directly into DOM details.
 
 ## Recommended Test Ladder
 

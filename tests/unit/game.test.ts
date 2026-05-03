@@ -6,8 +6,9 @@ import {
   reduceGame,
   serializeState,
   validateLevel,
-} from '../../src/core/game.js';
-import { getLevel } from '../../src/core/levels.js';
+} from '../../src/core/game';
+import { getLevel } from '../../src/core/levels';
+import type { GameAction, GameState, MoveKey } from '../../src/core/types';
 
 describe('game model', () => {
   it('creates a serializable initial state from a level', () => {
@@ -27,7 +28,7 @@ describe('game model', () => {
 
   it('loses when the player enters a hazard', () => {
     const state = createInitialState({ level: getLevel(0) });
-    const afterMoves = ['ArrowRight', 'ArrowRight', 'ArrowDown'].reduce(
+    const afterMoves = (['ArrowRight', 'ArrowRight', 'ArrowDown'] satisfies MoveKey[]).reduce(
       (current, key) => reduceGame(current, { type: 'MOVE', key }),
       state,
     );
@@ -49,7 +50,7 @@ describe('game model', () => {
       'ArrowDown',
       'ArrowDown',
       'ArrowDown',
-    ];
+    ] satisfies MoveKey[];
 
     const result = route.reduce(
       (current, key) => reduceGame(current, { type: 'MOVE', key }),
@@ -67,12 +68,12 @@ describe('game model', () => {
 
   it('ignores unknown actions, unknown movement keys, and moves after terminal states', () => {
     const state = createInitialState({ level: getLevel(0) });
-    const wonState = {
+    const wonState: GameState = {
       ...state,
       status: 'won',
     };
 
-    expect(reduceGame(state, { type: 'WAIT' })).toBe(state);
+    expect(reduceGame(state, { type: 'WAIT' } as unknown as GameAction)).toBe(state);
     expect(movePlayer(state, 'Space')).toBe(state);
     expect(movePlayer(wonState, 'ArrowRight')).toBe(wonState);
   });
@@ -124,7 +125,7 @@ describe('game model', () => {
       'ArrowDown',
       'ArrowDown',
       'ArrowDown',
-    ];
+    ] satisfies MoveKey[];
 
     const result = route.reduce(
       (current, key) => reduceGame(current, { type: 'MOVE', key }),

@@ -7,6 +7,7 @@ Build browser-only HTML games that can be tested, played, tuned, and verified by
 ## Core Rules
 
 - Keep game rules in pure functions under `src/core`.
+- Keep shared contracts in TypeScript types, especially levels, actions, state, snapshots, and `window.__GAME_HARNESS__`.
 - Put browser effects, DOM updates, and `localStorage` behind small adapters.
 - Write unit tests before changing game rules.
 - Use Playwright for any claim about browser rendering, keyboard input, focus, layout, persistence, or level playability.
@@ -22,6 +23,7 @@ Before finishing a game change, run:
 
 ```bash
 npm run lint
+npm run typecheck
 npm run test
 npm run eval:game
 npm run build
@@ -33,10 +35,10 @@ When changing level design, also add or update a Playwright test that proves the
 ## Harness Workflow
 
 1. Model first: add or update pure functions and unit tests.
-2. Browser second: wire model changes into `src/main.js`.
+2. Browser second: wire model changes into `src/main.ts`.
 3. Harness third: expose only stable inspection and control operations.
 4. Run `npm run eval:game` and inspect `artifacts/evals/latest.json`.
-5. Verify with Playwright using `tests/harness/gameDriver.js`.
+5. Verify with Playwright using `tests/harness/gameDriver.ts`.
 6. For visual work, run `npm run artifact:browser` and inspect the saved screenshot.
 7. Keep snapshots serializable so failures can be pasted into issues or PR comments.
 

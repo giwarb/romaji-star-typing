@@ -1,6 +1,15 @@
-import { getLevel } from './levels.js';
+import { getLevel } from './levels';
+import type {
+  GameAction,
+  GameState,
+  Level,
+  MoveAction,
+  MoveKey,
+  Point,
+  SerializedGameState,
+} from './types';
 
-const deltas = {
+const deltas: Record<MoveKey, Point> = {
   ArrowUp: { x: 0, y: -1 },
   KeyW: { x: 0, y: -1 },
   ArrowDown: { x: 0, y: 1 },
@@ -11,7 +20,15 @@ const deltas = {
   KeyD: { x: 1, y: 0 },
 };
 
-export function createInitialState({ level = getLevel(0), levelIndex = 0, best = {} } = {}) {
+export function createInitialState({
+  level = getLevel(0),
+  levelIndex = 0,
+  best = {},
+}: {
+  level?: Level;
+  levelIndex?: number;
+  best?: Record<string, number>;
+} = {}): GameState {
   validateLevel(level);
 
   return {
@@ -26,7 +43,7 @@ export function createInitialState({ level = getLevel(0), levelIndex = 0, best =
   };
 }
 
-export function reduceGame(state, action) {
+export function reduceGame(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'MOVE':
       return movePlayer(state, action.key);
@@ -47,12 +64,12 @@ export function reduceGame(state, action) {
   }
 }
 
-export function movePlayer(state, key) {
+export function movePlayer(state: GameState, key: string): GameState {
   if (state.status !== 'playing') {
     return state;
   }
 
-  const delta = deltas[key];
+  const delta = isMoveKey(key) ? deltas[key] : null;
   if (!delta) {
     return state;
   }
@@ -101,19 +118,19 @@ export function movePlayer(state, key) {
   };
 }
 
-export function keyboardToAction(key) {
-  return deltas[key] ? { type: 'MOVE', key } : null;
+export function keyboardToAction(key: string): MoveAction | null {
+  return isMoveKey(key) ? { type: 'MOVE', key } : null;
 }
 
-export function isHazard(level, point) {
+export function isHazard(level: Level, point: Point): boolean {
   return level.hazards.some((hazard) => samePoint(hazard, point));
 }
 
-export function samePoint(a, b) {
+export function samePoint(a: Point, b: Point): boolean {
   return a.x === b.x && a.y === b.y;
 }
 
-export function serializeState(state) {
+export function serializeState(state: GameState): SerializedGameState {
   return {
     levelId: state.level.id,
     levelIndex: state.levelIndex,
@@ -126,7 +143,7 @@ export function serializeState(state) {
   };
 }
 
-export function validateLevel(level) {
+export function validateLevel(level: Level): void {
   const requiredPoints = [level.start, level.goal, ...level.hazards];
   const validSize = Number.isInteger(level.width) && Number.isInteger(level.height);
   if (!validSize || level.width < 2 || level.height < 2) {
@@ -144,17 +161,21 @@ export function validateLevel(level) {
   }
 }
 
-function scoreMessage(moves, par) {
+function scoreMessage(moves: number, par: number): string {
   if (moves <= par) {
     return 'Clean run. Pulse gate stabilized.';
   }
   return 'Gate reached. Try trimming the route.';
 }
 
-function isInside(level, point) {
+function isInside(level: Level, point: Point): boolean {
   return point.x >= 0 && point.y >= 0 && point.x < level.width && point.y < level.height;
 }
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function isMoveKey(key: string): key is MoveKey {
+  return Object.hasOwn(deltas, key);
 }

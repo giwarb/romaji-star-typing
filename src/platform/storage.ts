@@ -1,6 +1,10 @@
+import type { BestScores } from '../core/types';
+
 const storageKey = 'html-game-ai-harness:save';
 
-export function loadSave(storage = localStorage) {
+export type StorageAdapter = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+export function loadSave(storage: StorageAdapter = localStorage): { best: BestScores } {
   const raw = storage.getItem(storageKey);
   if (!raw) {
     return { best: {} };
@@ -16,11 +20,11 @@ export function loadSave(storage = localStorage) {
   }
 }
 
-export function saveBest(best, storage = localStorage) {
+export function saveBest(best: BestScores, storage: StorageAdapter = localStorage): void {
   storage.setItem(storageKey, JSON.stringify({ best }));
 }
 
-export function clearSave(storage = localStorage) {
+export function clearSave(storage: StorageAdapter = localStorage): void {
   storage.removeItem(storageKey);
 }
 

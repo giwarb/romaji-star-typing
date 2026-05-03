@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { solvableLevel } from '../fixtures/solvable-level.js';
-import { createGameDriver } from '../harness/gameDriver.js';
+import { solvableLevel } from '../fixtures/solvable-level';
+import { createGameDriver } from '../harness/gameDriver';
 
 test('fixture level is loadable and solvable through browser harness', async ({ page }) => {
   const driver = await createGameDriver(page);

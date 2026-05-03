@@ -1,14 +1,52 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { baseLevels, generateSeededLevel } from '../src/core/levels.js';
-import { createInitialState, reduceGame, validateLevel } from '../src/core/game.js';
+import { createInitialState, reduceGame, validateLevel } from '../src/core/game';
+import { baseLevels, generateSeededLevel } from '../src/core/levels';
+import type { GameState, Level, MoveKey, Point } from '../src/core/types';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const levels = [...baseLevels, generateSeededLevel(1234)];
 const results = levels.map((level) => evaluateLevel(level));
 const summary = summarize(results);
-const report = {
+type LevelEvalResult = {
+  id: string;
+  name: string;
+  checks: {
+    valid: boolean;
+    solvable: boolean;
+    withinPar: boolean;
+    deterministic: boolean;
+  };
+  score: number;
+  par: number;
+  routeLength: number | null;
+  parDelta: number | null;
+  route: MoveKey[];
+  errors: string[];
+};
+
+type EvalSummary = {
+  totalLevels: number;
+  solvableLevels: number;
+  withinParLevels: number;
+  deterministicLevels: number;
+  overallScore: number;
+};
+
+type EvalReport = {
+  generatedAt: string;
+  targets: {
+    overallScore: number;
+    solvableLevels: number;
+    deterministicChecks: number;
+  };
+  summary: EvalSummary;
+  results: LevelEvalResult[];
+  nextAction: string;
+};
+
+const report: EvalReport = {
   generatedAt: new Date().toISOString(),
   targets: {
     overallScore: 0.9,
@@ -32,10 +70,10 @@ console.log(
   `Game eval passed: score=${summary.overallScore}, solvable=${summary.solvableLevels}/${summary.totalLevels}`,
 );
 
-function evaluateLevel(level) {
-  const errors = [];
-  let route = null;
-  let finalState = null;
+function evaluateLevel(level: Level): LevelEvalResult {
+  const errors: string[] = [];
+  let route: MoveKey[] | null = null;
+  let finalState: GameState | null = null;
 
   try {
     validateLevel(level);
@@ -52,7 +90,7 @@ function evaluateLevel(level) {
       }
     }
   } catch (error) {
-    errors.push(error.message);
+    errors.push(error instanceof Error ? error.message : String(error));
   }
 
   const parDelta = route ? route.length - level.par : null;
@@ -81,19 +119,22 @@ function evaluateLevel(level) {
   };
 }
 
-function findShortestRoute(level) {
-  const moves = [
+function findShortestRoute(level: Level): MoveKey[] | null {
+  const moves: Array<[MoveKey, Point]> = [
     ['ArrowUp', { x: 0, y: -1 }],
     ['ArrowDown', { x: 0, y: 1 }],
     ['ArrowLeft', { x: -1, y: 0 }],
     ['ArrowRight', { x: 1, y: 0 }],
   ];
   const hazardKeys = new Set(level.hazards.map(pointKey));
-  const queue = [{ point: level.start, route: [] }];
+  const queue: Array<{ point: Point; route: MoveKey[] }> = [{ point: level.start, route: [] }];
   const seen = new Set([pointKey(level.start)]);
 
   while (queue.length > 0) {
     const current = queue.shift();
+    if (!current) {
+      break;
+    }
     if (samePoint(current.point, level.goal)) {
       return current.route;
     }
@@ -116,7 +157,7 @@ function findShortestRoute(level) {
   return null;
 }
 
-function deterministicCheck(level) {
+function deterministicCheck(level: Level): boolean {
   if (!level.id.startsWith('seed-')) {
     return true;
   }
@@ -124,7 +165,7 @@ function deterministicCheck(level) {
   return JSON.stringify(level) === JSON.stringify(generateSeededLevel(seed));
 }
 
-function summarize(items) {
+function summarize(items: LevelEvalResult[]): EvalSummary {
   const totalScore = items.reduce((sum, item) => sum + item.score, 0);
   return {
     totalLevels: items.length,
@@ -135,7 +176,7 @@ function summarize(items) {
   };
 }
 
-function nextAction(summary, items) {
+function nextAction(_summary: EvalSummary, items: LevelEvalResult[]): string {
   const firstFailure = items.find((item) => item.score < 1);
   if (!firstFailure) {
     return 'All evaluated levels are valid, solvable, deterministic, and within par.';
@@ -149,12 +190,12 @@ function nextAction(summary, items) {
   return `Inspect level ${firstFailure.id}: score is below target.`;
 }
 
-function writeJson(path, value) {
+function writeJson(path: string, value: EvalReport): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function writeLog(path, value) {
+function writeLog(path: string, value: EvalReport): void {
   mkdirSync(dirname(path), { recursive: true });
   const lines = [
     '# Latest Eval',
@@ -178,10 +219,10 @@ function writeLog(path, value) {
   writeFileSync(path, `${lines.join('\n')}\n`);
 }
 
-function pointKey(point) {
+function pointKey(point: Point): string {
   return `${point.x},${point.y}`;
 }
 
-function samePoint(a, b) {
+function samePoint(a: Point, b: Point): boolean {
   return a.x === b.x && a.y === b.y;
 }

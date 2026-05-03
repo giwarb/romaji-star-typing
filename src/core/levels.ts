@@ -1,4 +1,6 @@
-export const baseLevels = [
+import type { Level, Point } from './types';
+
+export const baseLevels: Level[] = [
   {
     id: 'intro',
     name: 'Level 1',
@@ -33,12 +35,12 @@ export const baseLevels = [
   },
 ];
 
-export function getLevel(index = 0) {
+export function getLevel(index = 0): Level {
   const wrapped = ((index % baseLevels.length) + baseLevels.length) % baseLevels.length;
   return cloneLevel(baseLevels[wrapped]);
 }
 
-export function cloneLevel(level) {
+export function cloneLevel(level: Level): Level {
   return {
     ...level,
     start: { ...level.start },
@@ -47,9 +49,9 @@ export function cloneLevel(level) {
   };
 }
 
-export function generateSeededLevel(seed, width = 6, height = 6) {
+export function generateSeededLevel(seed: number | string, width = 6, height = 6): Level {
   const hazardCount = 5;
-  const hazards = [];
+  const hazards: Point[] = [];
   let value = Number(seed) || 1;
 
   while (hazards.length < hazardCount) {

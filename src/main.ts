@@ -1,15 +1,16 @@
 import './styles.css';
-import { createInitialState, keyboardToAction, reduceGame, serializeState } from './core/game.js';
-import { generateSeededLevel, getLevel } from './core/levels.js';
-import { loadSave, saveBest } from './platform/storage.js';
+import { createInitialState, keyboardToAction, reduceGame, serializeState } from './core/game';
+import { generateSeededLevel, getLevel } from './core/levels';
+import type { GameAction, GameHarness, HarnessSnapshot, Level, MoveKey } from './core/types';
+import { loadSave, saveBest } from './platform/storage';
 
-const board = document.querySelector('#board');
-const levelLabel = document.querySelector('[data-testid="level-label"]');
-const moveLabel = document.querySelector('[data-testid="move-label"]');
-const bestLabel = document.querySelector('[data-testid="best-label"]');
-const resetButton = document.querySelector('[data-testid="reset-button"]');
-const nextButton = document.querySelector('[data-testid="next-button"]');
-const seedButton = document.querySelector('[data-testid="seed-button"]');
+const board = getElement('#board', HTMLDivElement);
+const levelLabel = getElement('[data-testid="level-label"]', HTMLElement);
+const moveLabel = getElement('[data-testid="move-label"]', HTMLElement);
+const bestLabel = getElement('[data-testid="best-label"]', HTMLElement);
+const resetButton = getElement('[data-testid="reset-button"]', HTMLButtonElement);
+const nextButton = getElement('[data-testid="next-button"]', HTMLButtonElement);
+const seedButton = getElement('[data-testid="seed-button"]', HTMLButtonElement);
 
 let state = createInitialState({
   level: getLevel(0),
@@ -37,16 +38,16 @@ seedButton.addEventListener('click', () => {
   dispatch({ type: 'NEXT_LEVEL', level: generateSeededLevel(seed), levelIndex: state.levelIndex });
 });
 
-function dispatch(action) {
+function dispatch(action: GameAction): HarnessSnapshot {
   state = reduceGame(state, action);
   saveBest(state.best);
   render();
   return snapshot();
 }
 
-function render() {
-  board.style.setProperty('--columns', state.level.width);
-  board.style.setProperty('--rows', state.level.height);
+function render(): void {
+  board.style.setProperty('--columns', String(state.level.width));
+  board.style.setProperty('--rows', String(state.level.height));
   board.setAttribute('data-status', state.status);
   board.setAttribute('aria-label', `${state.level.name}: ${state.message}`);
   board.replaceChildren(...createCells());
@@ -56,8 +57,8 @@ function render() {
   bestLabel.textContent = `Best ${state.best[state.level.id] ?? '-'}`;
 }
 
-function createCells() {
-  const cells = [];
+function createCells(): HTMLDivElement[] {
+  const cells: HTMLDivElement[] = [];
   for (let y = 0; y < state.level.height; y += 1) {
     for (let x = 0; x < state.level.width; x += 1) {
       const cell = document.createElement('div');
@@ -85,7 +86,7 @@ function createCells() {
   return cells;
 }
 
-function snapshot() {
+function snapshot(): HarnessSnapshot {
   return {
     ...serializeState(state),
     board: {
@@ -97,10 +98,10 @@ function snapshot() {
   };
 }
 
-window.__GAME_HARNESS__ = {
+const harness: GameHarness = {
   snapshot,
   dispatch,
-  press(key) {
+  press(key: MoveKey) {
     return dispatch({ type: 'MOVE', key });
   },
   reset(seedOrState) {
@@ -126,9 +127,24 @@ window.__GAME_HARNESS__ = {
     render();
     return snapshot();
   },
-  loadLevel(level) {
+  loadLevel(level: Level) {
     state = createInitialState({ level, levelIndex: state.levelIndex, best: state.best });
     render();
     return snapshot();
   },
 };
+
+window.__GAME_HARNESS__ = harness;
+
+function getElement<T extends Element>(
+  selector: string,
+  constructor: {
+    new (...args: never[]): T;
+  },
+): T {
+  const element = document.querySelector(selector);
+  if (!(element instanceof constructor)) {
+    throw new Error(`Missing required element: ${selector}`);
+  }
+  return element;
+}

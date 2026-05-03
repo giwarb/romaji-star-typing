@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { clearSave, loadSave, saveBest, storageKey } from '../../src/platform/storage.js';
+import { clearSave, loadSave, saveBest, storageKey } from '../../src/platform/storage';
+import type { StorageAdapter } from '../../src/platform/storage';
 
 describe('storage adapter', () => {
   it('loads an empty save when storage has no data', () => {
@@ -32,17 +33,17 @@ describe('storage adapter', () => {
   });
 });
 
-function createMemoryStorage() {
-  const values = new Map();
+function createMemoryStorage(): StorageAdapter {
+  const values = new Map<string, string>();
 
   return {
-    getItem(key) {
+    getItem(key: string) {
       return values.get(key) ?? null;
     },
-    setItem(key, value) {
+    setItem(key: string, value: string) {
       values.set(key, value);
     },
-    removeItem(key) {
+    removeItem(key: string) {
       values.delete(key);
     },
   };

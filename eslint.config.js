@@ -1,12 +1,14 @@
 import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
 export default [
   js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     ignores: ['dist/**', 'coverage/**', 'playwright-report/**', 'test-results/**'],
   },
   {
-    files: ['**/*.js'],
+    files: ['**/*.{js,ts}'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
@@ -22,7 +24,7 @@ export default [
     },
   },
   {
-    files: ['playwright.config.js', 'vite.config.js', 'scripts/**/*.js', 'tests/**/*.js'],
+    files: ['playwright.config.js', 'vite.config.js', 'scripts/**/*.{js,ts}', 'tests/**/*.ts'],
     languageOptions: {
       globals: {
         console: 'readonly',
@@ -33,7 +35,7 @@ export default [
     },
   },
   {
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.{js,ts}'],
     rules: {
       'no-console': 'off',
     },

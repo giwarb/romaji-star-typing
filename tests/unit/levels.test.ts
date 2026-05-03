@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateSeededLevel, getLevel } from '../../src/core/levels.js';
+import { generateSeededLevel, getLevel } from '../../src/core/levels';
 
 describe('levels', () => {
   it('returns cloned base levels', () => {

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createGameDriver } from '../harness/gameDriver.js';
+import { createGameDriver } from '../harness/gameDriver';
 
 test('renders a complete board and exposes harness snapshots', async ({ page }) => {
   const driver = await createGameDriver(page);

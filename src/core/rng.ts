@@ -1,4 +1,7 @@
-export function createRng(seed = 1) {
+export function createRng(seed: number | string = 1): {
+  next(): number;
+  readonly state: number;
+} {
   let state = normalizeSeed(seed);
 
   return {
@@ -12,7 +15,7 @@ export function createRng(seed = 1) {
   };
 }
 
-export function normalizeSeed(seed) {
+export function normalizeSeed(seed: number | string): number {
   const numeric = Number(seed);
   if (!Number.isFinite(numeric)) {
     return 1;

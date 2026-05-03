@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRng, normalizeSeed } from '../../src/core/rng.js';
+import { createRng, normalizeSeed } from '../../src/core/rng';
 
 describe('deterministic rng', () => {
   it('normalizes invalid, zero, fractional, and negative seeds', () => {

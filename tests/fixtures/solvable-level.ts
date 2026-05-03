@@ -1,4 +1,6 @@
-export const solvableLevel = {
+import type { Level } from '../../src/core/types';
+
+export const solvableLevel: Level = {
   id: 'fixture-solvable',
   name: 'Fixture Solvable',
   width: 5,

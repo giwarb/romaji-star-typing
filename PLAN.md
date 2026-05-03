@@ -43,7 +43,7 @@ Clear arcade board, high contrast tiles, readable HUD, no decorative complexity 
 
 ## Stack And Hosting
 
-- Static HTML + JavaScript.
+- Static HTML + TypeScript.
 - Vite build.
 - Vitest for model tests.
 - Playwright for browser checks and artifacts.
