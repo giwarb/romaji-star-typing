@@ -10,11 +10,16 @@ Use this skill whenever modifying the game, levels, rendering, persistence, or t
 ## Workflow
 
 1. Read `AGENTS.md`.
-2. Put deterministic rules in `src/core`.
-3. Add or update Vitest tests in `tests/unit` before changing behavior.
-4. Keep DOM and storage code thin.
-5. Use `tests/harness/gameDriver.js` for Playwright tests.
-6. Run `npm run check` before delivery.
+2. Read `PLAN.md` and update it first if the game concept, loop, controls, or milestones change.
+3. Put deterministic rules in `src/core`.
+4. Add or update Vitest tests in `tests/unit` before changing behavior.
+5. Run `npm run eval:game` before and after hard level or algorithm changes.
+6. Keep DOM and storage code thin.
+7. Use `tests/harness/gameDriver.js` for Playwright tests.
+8. For visual changes, run `npm run artifact:browser` and inspect the screenshot.
+9. Log long-running iteration notes under `.logs/`.
+10. Save image generation prompts under `.prompts/`.
+11. Run `npm run check` before delivery.
 
 ## Harness Requirements
 
@@ -27,3 +32,7 @@ The page must expose `window.__GAME_HARNESS__` with:
 - `loadLevel(level)`
 
 Do not expose unstable internal DOM nodes through the harness.
+
+## Review Focus
+
+Flag missing tests, weakened harness coverage, undocumented changes to `PLAN.md`, missing visual prompts for generated assets, and any network or server-side persistence added to this static template.

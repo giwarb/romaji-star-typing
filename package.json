@@ -13,9 +13,11 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+    "eval:game": "node scripts/evaluate-game.js",
+    "artifact:browser": "node scripts/capture-browser-artifact.js",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "check": "npm run lint && npm run test && npm run build && npm run test:e2e",
+    "check": "npm run lint && npm run test && npm run eval:game && npm run build && npm run test:e2e",
     "prepare": "node scripts/install-git-hooks.js"
   },
   "devDependencies": {

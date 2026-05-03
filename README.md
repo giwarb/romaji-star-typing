@@ -12,6 +12,9 @@ The included sample game, **Pulse Runner**, is intentionally small: move the pla
 - Unit tests for deterministic state transitions.
 - Playwright E2E tests that operate the game through keyboard and harness APIs.
 - `window.__GAME_HARNESS__` for AI-assisted inspection, stepping, reset, snapshots, and level loading.
+- `PLAN.md`, `.logs/`, and `.prompts/` for long-running Codex game sessions.
+- Machine-readable eval reports with `npm run eval:game`.
+- Browser screenshot artifacts with `npm run artifact:browser`.
 - GitHub Actions CI for lint, unit tests, build, and browser tests.
 - GitHub Pages deployment workflow for static hosting.
 - `AGENTS.md`, Codex skill, and git hook scaffolding for repeatable AI development.
@@ -36,6 +39,9 @@ tests/e2e/       Playwright browser verification
 tests/harness/   AI-facing Playwright helpers
 .github/         CI and GitHub Pages deployment
 .codex/skills/   Repo-local Codex workflow skill
+.logs/           Iteration logs and eval summaries
+.prompts/        Reusable image-generation prompts
+artifacts/       Generated eval and browser artifacts
 ```
 
 ## Deployment
@@ -59,3 +65,7 @@ The harness supports:
 - `loadLevel(level)` swaps in a custom level object for level-design tests.
 
 This means an AI can change code, run deterministic unit tests, open the browser, inspect the actual game, make moves, and verify that the browser behavior matches the pure model.
+
+## Codex Workflow
+
+Start new games by editing `PLAN.md`. For hard level or algorithm work, run `npm run eval:game` before and after each focused change and compare `artifacts/evals/latest.json`. For visual work, save reusable image prompts under `.prompts/`, run `npm run artifact:browser`, and inspect the screenshot before stopping.

@@ -25,8 +25,17 @@ export default [
     files: ['playwright.config.js', 'vite.config.js', 'scripts/**/*.js', 'tests/**/*.js'],
     languageOptions: {
       globals: {
+        console: 'readonly',
+        fetch: 'readonly',
         process: 'readonly',
+        setTimeout: 'readonly',
       },
+    },
+  },
+  {
+    files: ['scripts/**/*.js'],
+    rules: {
+      'no-console': 'off',
     },
   },
 ];

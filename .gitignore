@@ -6,3 +6,9 @@ test-results/
 .vite/
 .env
 .DS_Store
+artifacts/browser/*.png
+artifacts/browser/*.json
+artifacts/evals/*.json
+!artifacts/evals/.gitkeep
+!artifacts/browser/.gitkeep
+.logs/latest-eval.md

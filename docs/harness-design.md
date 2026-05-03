@@ -5,6 +5,7 @@ This repository treats the game as three layers:
 1. Pure model functions in `src/core`.
 2. Browser adapters for rendering, events, and persistence.
 3. Playwright and `window.__GAME_HARNESS__` for external operation.
+4. Eval scripts and generated artifacts for long-running improvement loops.
 
 ## Why This Helps AI Game Development
 
@@ -27,6 +28,8 @@ Playwright tests should use `tests/harness/gameDriver.js` instead of reaching di
 1. Unit tests for pure rules.
 2. Unit tests for deterministic level generation.
 3. Storage adapter tests with fake storage.
-4. Playwright smoke test for rendering.
-5. Playwright playability test for each shipped level.
-6. Optional visual regression or screenshot checks once art direction stabilizes.
+4. `npm run eval:game` for machine-readable level and harness scoring.
+5. Playwright smoke test for rendering.
+6. Playwright playability test for each shipped level.
+7. Browser screenshot artifacts for visual changes.
+8. Optional visual regression checks once art direction stabilizes.

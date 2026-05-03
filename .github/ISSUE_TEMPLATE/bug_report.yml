@@ -1,0 +1,40 @@
+name: Bug report
+description: Report a reproducible game or harness bug.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Link logs, screenshots, Playwright reports, Pages URL, or exact repro notes.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Keep observed facts separate from guesses.
+      placeholder: |
+        1. Open ...
+        2. Press ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
