@@ -1,0 +1,157 @@
+:root {
+  color: #f6f4ea;
+  background: #151513;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button {
+  border: 1px solid #6b8f71;
+  border-radius: 6px;
+  background: #243b2a;
+  color: #f6f4ea;
+  cursor: pointer;
+  font: inherit;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+button:hover {
+  background: #315239;
+}
+
+#app {
+  align-items: center;
+  display: flex;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.game-shell {
+  margin: 0 auto;
+  max-width: 760px;
+  width: 100%;
+}
+
+.topbar {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  color: #88c0d0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 7vw, 5rem);
+  line-height: 0.95;
+  margin: 0;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.stats span {
+  border: 1px solid #4a4a43;
+  border-radius: 6px;
+  min-width: 88px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.board-wrap {
+  width: 100%;
+}
+
+.board {
+  aspect-ratio: 1;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+  width: min(100%, 620px);
+}
+
+.cell {
+  align-items: center;
+  background: #23231f;
+  border: 1px solid #44443c;
+  border-radius: 6px;
+  color: transparent;
+  display: flex;
+  font-weight: 800;
+  justify-content: center;
+  min-width: 0;
+  user-select: none;
+}
+
+.cell.goal {
+  background: #2e5160;
+  color: #d8f3ff;
+}
+
+.cell.hazard {
+  background: #632d38;
+  color: #ffd8df;
+}
+
+.cell.player {
+  background: #d4a72c;
+  color: #191713;
+}
+
+.board[data-status='won'] .cell.player {
+  background: #6baf7d;
+}
+
+.board[data-status='lost'] .cell.player {
+  background: #d75f5f;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+@media (max-width: 620px) {
+  #app {
+    align-items: start;
+    padding: 16px;
+  }
+
+  .topbar {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .stats {
+    justify-content: start;
+    width: 100%;
+  }
+
+  .stats span {
+    flex: 1 1 88px;
+  }
+}
