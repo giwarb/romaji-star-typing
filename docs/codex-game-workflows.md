@@ -41,7 +41,7 @@ Stop after this one change and summarize files changed plus the browser check.
 
 ## Eval-Driven Logic Loop
 
-For hard level-design or game-algorithm work:
+For hard stage-design or game-algorithm work:
 
 1. Run `npm run eval:game` on the baseline.
 2. Inspect `artifacts/evals/latest.json`.
@@ -50,7 +50,7 @@ For hard level-design or game-algorithm work:
 5. Log what changed and whether the score improved in `.logs/`.
 6. Continue until the target score is met.
 
-The default target is an overall score of `0.9` with all evaluated levels solvable.
+The default target is an overall score of `0.9` with all evaluated stages valid and appropriately progressive.
 
 ## Browser Artifact Loop
 

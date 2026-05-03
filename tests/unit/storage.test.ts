@@ -1,35 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import { clearSave, loadSave, saveBest, storageKey } from '../../src/platform/storage';
+import { clearSave, emptySave, loadSave, saveProgress, storageKey } from '../../src/platform/storage';
 import type { StorageAdapter } from '../../src/platform/storage';
 
 describe('storage adapter', () => {
   it('loads an empty save when storage has no data', () => {
     const storage = createMemoryStorage();
 
-    expect(loadSave(storage)).toEqual({ best: {} });
+    expect(loadSave(storage)).toEqual(emptySave());
   });
 
-  it('persists best scores', () => {
+  it('persists best scores and unlocked stage', () => {
     const storage = createMemoryStorage();
 
-    saveBest({ intro: 10 }, storage);
+    saveProgress({ best: { vowels: 120 }, unlockedStage: 2 }, storage);
 
-    expect(loadSave(storage)).toEqual({ best: { intro: 10 } });
+    expect(loadSave(storage)).toEqual({ best: { vowels: 120 }, unlockedStage: 2 });
   });
 
   it('recovers from invalid JSON', () => {
     const storage = createMemoryStorage();
     storage.setItem(storageKey, '{');
 
-    expect(loadSave(storage)).toEqual({ best: {} });
+    expect(loadSave(storage)).toEqual(emptySave());
   });
 
   it('clears saved data', () => {
     const storage = createMemoryStorage();
-    saveBest({ intro: 10 }, storage);
+    saveProgress({ best: { vowels: 120 }, unlockedStage: 2 }, storage);
     clearSave(storage);
 
-    expect(loadSave(storage)).toEqual({ best: {} });
+    expect(loadSave(storage)).toEqual(emptySave());
   });
 });
 

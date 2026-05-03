@@ -7,10 +7,10 @@ Build browser-only HTML games that can be tested, played, tuned, and verified by
 ## Core Rules
 
 - Keep game rules in pure functions under `src/core`.
-- Keep shared contracts in TypeScript types, especially levels, actions, state, snapshots, and `window.__GAME_HARNESS__`.
+- Keep shared contracts in TypeScript types, especially stages, challenges, actions, state, snapshots, and `window.__GAME_HARNESS__`.
 - Put browser effects, DOM updates, and `localStorage` behind small adapters.
 - Write unit tests before changing game rules.
-- Use Playwright for any claim about browser rendering, keyboard input, focus, layout, persistence, or level playability.
+- Use Playwright for any claim about browser rendering, keyboard input, focus, layout, persistence, stage unlocking, or typing feedback.
 - Preserve `window.__GAME_HARNESS__` as the stable AI control surface.
 - Do not add server-side runtime dependencies. Persistence must stay in `localStorage`.
 - Use `PLAN.md` to keep the current game goal, loop, controls, win/fail states, progression, visual direction, stack assumptions, and milestones concrete.
@@ -30,7 +30,7 @@ npm run build
 npm run test:e2e
 ```
 
-When changing level design, also add or update a Playwright test that proves the level can be completed or that the expected failure state occurs.
+When changing stage design, also add or update a Playwright test that proves the stage can be practiced and feedback states remain clear.
 
 ## Harness Workflow
 
@@ -44,18 +44,17 @@ When changing level design, also add or update a Playwright test that proves the
 
 ## Eval-Driven Iteration
 
-- Run baseline evals before broad gameplay or level changes.
+- Run baseline evals before broad gameplay or stage changes.
 - Make one focused change at a time, then re-run the eval command.
 - Record the current best score, what changed, what improved or regressed, and the next hypothesis in `.logs/`.
 - Do not stop at the first green test when the task is optimization; continue until the stated score threshold is met.
 - If a visual or generated artifact matters, inspect the artifact directly instead of relying only on logs.
 
-## Level Design Guidance
+## Stage Design Guidance
 
-- Prefer deterministic levels over random-only content.
-- If randomness is required, pass a seed into pure generation functions.
-- Every shipped level needs an automated solvability check.
-- Tune difficulty by adding fixtures in `tests/fixtures`, then test the fixture through both the model and browser.
+- Prefer deterministic challenge order over random-only content.
+- Every shipped stage needs typed challenge data and automated validation.
+- Tune difficulty by adding or editing challenges in `src/core/lessons.ts`, then test through both the model and browser.
 
 ## GitHub Pages
 
@@ -77,7 +76,7 @@ The app must remain static. Build output belongs in `dist/`; deployment is handl
 
 ## Review Guidelines
 
-- Flag missing tests for game-rule, level, persistence, harness, or rendering changes.
+- Flag missing tests for game-rule, stage, persistence, harness, or rendering changes.
 - Flag risky behavior changes that bypass `src/core` pure functions or weaken `window.__GAME_HARNESS__`.
 - Flag documentation gaps when `PLAN.md`, `.prompts/`, or `.logs/` should be updated.
 - Flag security regressions, accidental secrets, new network calls, or server-side persistence.

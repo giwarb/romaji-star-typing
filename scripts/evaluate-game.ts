@@ -1,61 +1,23 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createInitialState, reduceGame, validateLevel } from '../src/core/game';
-import { baseLevels, generateSeededLevel } from '../src/core/levels';
-import type { GameState, Level, MoveKey, Point } from '../src/core/types';
+import { validateStage } from '../src/core/game';
+import { stages } from '../src/core/lessons';
+import type { Stage } from '../src/core/types';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const levels = [...baseLevels, generateSeededLevel(1234)];
-const results = levels.map((level) => evaluateLevel(level));
+const results = stages.map((stage) => evaluateStage(stage));
 const summary = summarize(results);
-type LevelEvalResult = {
-  id: string;
-  name: string;
-  checks: {
-    valid: boolean;
-    solvable: boolean;
-    withinPar: boolean;
-    deterministic: boolean;
-  };
-  score: number;
-  par: number;
-  routeLength: number | null;
-  parDelta: number | null;
-  route: MoveKey[];
-  errors: string[];
-};
-
-type EvalSummary = {
-  totalLevels: number;
-  solvableLevels: number;
-  withinParLevels: number;
-  deterministicLevels: number;
-  overallScore: number;
-};
-
-type EvalReport = {
-  generatedAt: string;
-  targets: {
-    overallScore: number;
-    solvableLevels: number;
-    deterministicChecks: number;
-  };
-  summary: EvalSummary;
-  results: LevelEvalResult[];
-  nextAction: string;
-};
-
-const report: EvalReport = {
+const report = {
   generatedAt: new Date().toISOString(),
   targets: {
     overallScore: 0.9,
-    solvableLevels: 1,
-    deterministicChecks: 1,
+    validStages: stages.length,
+    minimumWordChallenges: 6,
   },
   summary,
   results,
-  nextAction: nextAction(summary, results),
+  nextAction: nextAction(results),
 };
 
 writeJson(`${root}/artifacts/evals/latest.json`, report);
@@ -67,162 +29,114 @@ if (summary.overallScore < report.targets.overallScore) {
 }
 
 console.log(
-  `Game eval passed: score=${summary.overallScore}, solvable=${summary.solvableLevels}/${summary.totalLevels}`,
+  `Game eval passed: score=${summary.overallScore}, valid=${summary.validStages}/${summary.totalStages}`,
 );
 
-function evaluateLevel(level: Level): LevelEvalResult {
-  const errors: string[] = [];
-  let route: MoveKey[] | null = null;
-  let finalState: GameState | null = null;
+type StageEvalResult = {
+  id: string;
+  name: string;
+  challengeCount: number;
+  averageRomajiLength: number;
+  checks: {
+    valid: boolean;
+    enoughChallenges: boolean;
+    hasKana: boolean;
+    romajiOnly: boolean;
+    difficultyFitsStage: boolean;
+  };
+  score: number;
+  errors: string[];
+};
 
+function evaluateStage(stage: Stage): StageEvalResult {
+  const errors: string[] = [];
   try {
-    validateLevel(level);
-    route = findShortestRoute(level);
-    if (!route) {
-      errors.push('No route from start to goal.');
-    } else {
-      finalState = route.reduce(
-        (state, key) => reduceGame(state, { type: 'MOVE', key }),
-        createInitialState({ level }),
-      );
-      if (finalState.status !== 'won') {
-        errors.push(`Route ended with status ${finalState.status}.`);
-      }
-    }
+    validateStage(stage);
   } catch (error) {
     errors.push(error instanceof Error ? error.message : String(error));
   }
 
-  const parDelta = route ? route.length - level.par : null;
+  const averageRomajiLength =
+    stage.challenges.reduce((sum, challenge) => sum + challenge.romaji.length, 0) /
+    stage.challenges.length;
   const checks = {
     valid: errors.length === 0,
-    solvable: Boolean(route && finalState?.status === 'won'),
-    withinPar: route ? route.length <= level.par : false,
-    deterministic: deterministicCheck(level),
+    enoughChallenges: stage.challenges.length >= Math.min(stage.requiredCorrect, 5),
+    hasKana: stage.challenges.every((challenge) => challenge.kana.length > 0),
+    romajiOnly: stage.challenges.every((challenge) => /^[a-z]+$/.test(challenge.romaji)),
+    difficultyFitsStage: difficultyFitsStage(stage, averageRomajiLength),
   };
   const score =
-    Number(checks.valid) * 0.25 +
-    Number(checks.solvable) * 0.35 +
-    Number(checks.withinPar) * 0.2 +
-    Number(checks.deterministic) * 0.2;
+    Number(checks.valid) * 0.3 +
+    Number(checks.enoughChallenges) * 0.2 +
+    Number(checks.hasKana) * 0.15 +
+    Number(checks.romajiOnly) * 0.15 +
+    Number(checks.difficultyFitsStage) * 0.2;
 
   return {
-    id: level.id,
-    name: level.name,
+    id: stage.id,
+    name: stage.name,
+    challengeCount: stage.challenges.length,
+    averageRomajiLength: Number(averageRomajiLength.toFixed(2)),
     checks,
     score,
-    par: level.par,
-    routeLength: route?.length ?? null,
-    parDelta,
-    route: route ?? [],
     errors,
   };
 }
 
-function findShortestRoute(level: Level): MoveKey[] | null {
-  const moves: Array<[MoveKey, Point]> = [
-    ['ArrowUp', { x: 0, y: -1 }],
-    ['ArrowDown', { x: 0, y: 1 }],
-    ['ArrowLeft', { x: -1, y: 0 }],
-    ['ArrowRight', { x: 1, y: 0 }],
-  ];
-  const hazardKeys = new Set(level.hazards.map(pointKey));
-  const queue: Array<{ point: Point; route: MoveKey[] }> = [{ point: level.start, route: [] }];
-  const seen = new Set([pointKey(level.start)]);
-
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) {
-      break;
-    }
-    if (samePoint(current.point, level.goal)) {
-      return current.route;
-    }
-
-    for (const [key, delta] of moves) {
-      const next = {
-        x: current.point.x + delta.x,
-        y: current.point.y + delta.y,
-      };
-      const nextKey = pointKey(next);
-      const outside = next.x < 0 || next.y < 0 || next.x >= level.width || next.y >= level.height;
-      if (outside || hazardKeys.has(nextKey) || seen.has(nextKey)) {
-        continue;
-      }
-      seen.add(nextKey);
-      queue.push({ point: next, route: [...current.route, key] });
-    }
+function difficultyFitsStage(stage: Stage, averageRomajiLength: number): boolean {
+  if (stage.id === 'vowels') {
+    return stage.challenges.every((challenge) => challenge.romaji.length === 1);
   }
-
-  return null;
+  if (stage.id === 'words') {
+    return averageRomajiLength >= 4;
+  }
+  return averageRomajiLength >= 2;
 }
 
-function deterministicCheck(level: Level): boolean {
-  if (!level.id.startsWith('seed-')) {
-    return true;
-  }
-  const seed = level.id.replace('seed-', '');
-  return JSON.stringify(level) === JSON.stringify(generateSeededLevel(seed));
-}
-
-function summarize(items: LevelEvalResult[]): EvalSummary {
+function summarize(items: StageEvalResult[]) {
   const totalScore = items.reduce((sum, item) => sum + item.score, 0);
   return {
-    totalLevels: items.length,
-    solvableLevels: items.filter((item) => item.checks.solvable).length,
-    withinParLevels: items.filter((item) => item.checks.withinPar).length,
-    deterministicLevels: items.filter((item) => item.checks.deterministic).length,
+    totalStages: items.length,
+    validStages: items.filter((item) => item.checks.valid).length,
+    totalChallenges: items.reduce((sum, item) => sum + item.challengeCount, 0),
     overallScore: Number((totalScore / items.length).toFixed(3)),
   };
 }
 
-function nextAction(_summary: EvalSummary, items: LevelEvalResult[]): string {
+function nextAction(items: StageEvalResult[]): string {
   const firstFailure = items.find((item) => item.score < 1);
   if (!firstFailure) {
-    return 'All evaluated levels are valid, solvable, deterministic, and within par.';
+    return 'All stages have valid kana, romaji, challenge counts, and difficulty progression.';
   }
-  if (!firstFailure.checks.solvable) {
-    return `Fix level ${firstFailure.id}: it is not solvable.`;
-  }
-  if (!firstFailure.checks.withinPar) {
-    return `Tune level ${firstFailure.id}: shortest route exceeds par.`;
-  }
-  return `Inspect level ${firstFailure.id}: score is below target.`;
+  return `Improve ${firstFailure.id}: ${firstFailure.errors[0] ?? 'score is below target.'}`;
 }
 
-function writeJson(path: string, value: EvalReport): void {
+function writeJson(path: string, value: typeof report): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function writeLog(path: string, value: EvalReport): void {
+function writeLog(path: string, value: typeof report): void {
   mkdirSync(dirname(path), { recursive: true });
   const lines = [
     '# Latest Eval',
     '',
     `Generated: ${value.generatedAt}`,
     `Overall score: ${value.summary.overallScore}`,
-    `Solvable levels: ${value.summary.solvableLevels}/${value.summary.totalLevels}`,
-    `Within par: ${value.summary.withinParLevels}/${value.summary.totalLevels}`,
+    `Valid stages: ${value.summary.validStages}/${value.summary.totalStages}`,
+    `Total challenges: ${value.summary.totalChallenges}`,
     '',
     '## Next Action',
     '',
     value.nextAction,
     '',
-    '## Level Scores',
+    '## Stage Scores',
     '',
     ...value.results.map(
       (item) =>
-        `- ${item.id}: score=${item.score}, route=${item.routeLength}, par=${item.par}, errors=${item.errors.length}`,
+        `- ${item.id}: score=${item.score}, challenges=${item.challengeCount}, avgLength=${item.averageRomajiLength}, errors=${item.errors.length}`,
     ),
   ];
   writeFileSync(path, `${lines.join('\n')}\n`);
-}
-
-function pointKey(point: Point): string {
-  return `${point.x},${point.y}`;
-}
-
-function samePoint(a: Point, b: Point): boolean {
-  return a.x === b.x && a.y === b.y;
 }

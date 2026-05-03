@@ -5,7 +5,7 @@ description: Use for developing browser-only HTML games in this repository with 
 
 # HTML Game Harness
 
-Use this skill whenever modifying the game, levels, rendering, persistence, or tests.
+Use this skill whenever modifying the game, stages, rendering, persistence, or tests.
 
 ## Workflow
 
@@ -29,10 +29,10 @@ The page must expose `window.__GAME_HARNESS__` with:
 - `dispatch(action)`
 - `press(key)`
 - `reset(seedOrState?)`
-- `loadLevel(level)`
+- `loadStage(stageIndex)`
 
 Do not expose unstable internal DOM nodes through the harness.
 
 ## Review Focus
 
-Flag missing tests, weakened harness coverage, undocumented changes to `PLAN.md`, missing visual prompts for generated assets, and any network or server-side persistence added to this static template.
+Flag missing tests, weakened harness coverage, undocumented changes to `PLAN.md`, missing visual prompts for generated assets, and any network or server-side persistence added to this static game.

@@ -1,181 +1,96 @@
 import { describe, expect, it } from 'vitest';
 import {
   createInitialState,
-  keyboardToAction,
-  movePlayer,
+  currentChallenge,
+  currentStage,
+  keyboardState,
   reduceGame,
   serializeState,
-  validateLevel,
+  stageProgress,
+  typeKey,
+  validateStage,
 } from '../../src/core/game';
-import { getLevel } from '../../src/core/levels';
-import type { GameAction, GameState, MoveKey } from '../../src/core/types';
+import { stages } from '../../src/core/lessons';
 
-describe('game model', () => {
-  it('creates a serializable initial state from a level', () => {
-    const state = createInitialState({ level: getLevel(0) });
-
-    expect(state.player).toEqual({ x: 0, y: 0 });
-    expect(state.moves).toBe(0);
-    expect(state.status).toBe('playing');
-  });
-
-  it('moves with keyboard codes and clamps against walls', () => {
-    const state = createInitialState({ level: getLevel(0) });
-
-    expect(movePlayer(state, 'ArrowLeft').player).toEqual({ x: 0, y: 0 });
-    expect(movePlayer(state, 'ArrowRight').player).toEqual({ x: 1, y: 0 });
-  });
-
-  it('loses when the player enters a hazard', () => {
-    const state = createInitialState({ level: getLevel(0) });
-    const afterMoves = (['ArrowRight', 'ArrowRight', 'ArrowDown'] satisfies MoveKey[]).reduce(
-      (current, key) => reduceGame(current, { type: 'MOVE', key }),
-      state,
-    );
-
-    expect(afterMoves.player).toEqual({ x: 2, y: 1 });
-    expect(afterMoves.status).toBe('lost');
-  });
-
-  it('wins and records best score when the goal is reached', () => {
-    const state = createInitialState({ level: getLevel(0) });
-    const route = [
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowDown',
-      'ArrowDown',
-      'ArrowDown',
-      'ArrowDown',
-      'ArrowDown',
-    ] satisfies MoveKey[];
-
-    const result = route.reduce(
-      (current, key) => reduceGame(current, { type: 'MOVE', key }),
-      state,
-    );
-
-    expect(result.status).toBe('won');
-    expect(result.best.intro).toBe(10);
-  });
-
-  it('maps only supported keyboard codes to actions', () => {
-    expect(keyboardToAction('KeyW')).toEqual({ type: 'MOVE', key: 'KeyW' });
-    expect(keyboardToAction('Space')).toBeNull();
-  });
-
-  it('ignores unknown actions, unknown movement keys, and moves after terminal states', () => {
-    const state = createInitialState({ level: getLevel(0) });
-    const wonState: GameState = {
-      ...state,
-      status: 'won',
-    };
-
-    expect(reduceGame(state, { type: 'WAIT' } as unknown as GameAction)).toBe(state);
-    expect(movePlayer(state, 'Space')).toBe(state);
-    expect(movePlayer(wonState, 'ArrowRight')).toBe(wonState);
-  });
-
-  it('resets current and next levels while preserving best scores', () => {
-    const state = createInitialState({ level: getLevel(0), best: { intro: 10 } });
-    const nextLevel = getLevel(1);
-
-    const next = reduceGame(state, {
-      type: 'NEXT_LEVEL',
-      level: nextLevel,
-      levelIndex: 1,
-    });
-    const reset = reduceGame(next, { type: 'RESET' });
-
-    expect(next.level.id).toBe('switchback');
-    expect(next.best).toEqual({ intro: 10 });
-    expect(reset.player).toEqual(nextLevel.start);
-    expect(reset.best).toEqual({ intro: 10 });
-  });
-
-  it('serializes state without leaking mutable references', () => {
-    const state = createInitialState({ level: getLevel(0), best: { intro: 10 } });
+describe('romaji typing game model', () => {
+  it('starts on the vowel stage with a serializable prompt', () => {
+    const state = createInitialState({ seed: 1 });
     const snapshot = serializeState(state);
 
-    snapshot.player.x = 99;
-    snapshot.history[0].x = 99;
-    snapshot.best.intro = 1;
-
-    expect(state.player.x).toBe(0);
-    expect(state.history[0].x).toBe(0);
-    expect(state.best.intro).toBe(10);
+    expect(currentStage(state).id).toBe('vowels');
+    expect(snapshot.kana).toBeTruthy();
+    expect(snapshot.romaji).toMatch(/^[aeiou]$/);
+    expect(snapshot.status).toBe('playing');
   });
 
-  it('keeps lower best scores and reports over-par wins', () => {
-    const level = {
-      ...getLevel(0),
-      par: 1,
-    };
-    const state = createInitialState({ level, best: { intro: 5 } });
-    const route = [
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowRight',
-      'ArrowDown',
-      'ArrowDown',
-      'ArrowDown',
-      'ArrowDown',
-      'ArrowDown',
-    ] satisfies MoveKey[];
+  it('accepts correct typing and advances typed progress', () => {
+    const state = createInitialState({ seed: 1 });
+    const challenge = currentChallenge(state);
+    const result = typeKey(state, challenge.romaji[0]);
 
-    const result = route.reduce(
-      (current, key) => reduceGame(current, { type: 'MOVE', key }),
-      state,
-    );
-
-    expect(result.best.intro).toBe(5);
-    expect(result.message).toBe('Gate reached. Try trimming the route.');
+    expect(result.typed).toBe(challenge.romaji[0]);
+    expect(result.score).toBeGreaterThan(0);
+    expect(result.lastCorrectKey).toBe(challenge.romaji[0]);
+    expect(result.lastMistake).toBeNull();
   });
 
-  it('rejects invalid levels before they reach rendering', () => {
-    expect(() =>
-      validateLevel({
-        id: 'bad',
-        name: 'Bad',
-        width: 2,
-        height: 2,
-        start: { x: 0, y: 0 },
-        goal: { x: 1, y: 1 },
-        hazards: [{ x: 0, y: 0 }],
-        par: 2,
-      }),
-    ).toThrow('Start and goal');
+  it('highlights both actual and expected keys after a mistake', () => {
+    const state = createInitialState({ seed: 1 });
+    const challenge = currentChallenge(state);
+    const wrongKey = challenge.romaji[0] === 'a' ? 's' : 'a';
+    const result = typeKey(state, wrongKey);
+    const keys = keyboardState(result);
+
+    expect(result.mistakes).toBe(1);
+    expect(result.lastMistake).toMatchObject({ actual: wrongKey, expected: challenge.romaji[0] });
+    expect(keys[wrongKey]).toBe('wrong');
+    expect(keys[challenge.romaji[0]]).toBe('expected');
   });
 
-  it('rejects invalid level sizes and out-of-bounds points', () => {
-    expect(() =>
-      validateLevel({
-        id: 'tiny',
-        name: 'Tiny',
-        width: 1,
-        height: 2,
-        start: { x: 0, y: 0 },
-        goal: { x: 0, y: 1 },
-        hazards: [],
-        par: 1,
-      }),
-    ).toThrow('integer width and height');
+  it('completes challenges and unlocks the next stage', () => {
+    let state = createInitialState({ seed: 1 });
+    const stage = currentStage(state);
 
+    for (let count = 0; count < stage.requiredCorrect; count += 1) {
+      const challenge = currentChallenge(state);
+      for (const key of challenge.romaji) {
+        state = typeKey(state, key);
+      }
+      if (count < stage.requiredCorrect - 1) {
+        state = reduceGame(state, { type: 'NEXT_CHALLENGE' });
+      }
+    }
+
+    expect(state.status).toBe('stage-complete');
+    expect(state.unlockedStage).toBe(1);
+    expect(state.best.vowels).toBeGreaterThan(0);
+  });
+
+  it('moves between stages and resets while keeping save data', () => {
+    const state = createInitialState({ save: { best: { vowels: 100 }, unlockedStage: 2 } });
+    const next = reduceGame(state, { type: 'SET_STAGE', stageIndex: 2 });
+    const reset = reduceGame(next, { type: 'RESET' });
+
+    expect(currentStage(next).id).toBe('mixed-basic');
+    expect(reset.best.vowels).toBe(100);
+    expect(reset.unlockedStage).toBe(2);
+  });
+
+  it('reports progress as bounded ratios', () => {
+    const state = createInitialState();
+    const progress = stageProgress(state);
+
+    expect(progress.stagePercent).toBeGreaterThanOrEqual(0);
+    expect(progress.coursePercent).toBeGreaterThanOrEqual(0);
+    expect(progress.coursePercent).toBeLessThanOrEqual(1);
+  });
+
+  it('rejects invalid stage data', () => {
     expect(() =>
-      validateLevel({
-        id: 'outside',
-        name: 'Outside',
-        width: 2,
-        height: 2,
-        start: { x: 0, y: 0 },
-        goal: { x: 2, y: 1 },
-        hazards: [],
-        par: 1,
+      validateStage({
+        ...stages[0],
+        challenges: [{ id: 'bad', kana: 'あ', romaji: 'a1', hint: '', group: 'bad' }],
       }),
-    ).toThrow('outside the level');
+    ).toThrow('invalid romaji');
   });
 });

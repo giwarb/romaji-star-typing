@@ -1,96 +1,135 @@
-export type Point = {
-  x: number;
-  y: number;
-};
+export type StageId = 'vowels' | 'k-row' | 'mixed-basic' | 'dakuten' | 'combo' | 'words';
 
-export type Level = {
+export type Challenge = {
   id: string;
-  name: string;
-  width: number;
-  height: number;
-  start: Point;
-  goal: Point;
-  hazards: Point[];
-  par: number;
+  kana: string;
+  romaji: string;
+  hint: string;
+  group: string;
 };
 
-export type GameStatus = 'playing' | 'won' | 'lost';
+export type Stage = {
+  id: StageId;
+  name: string;
+  badge: string;
+  description: string;
+  requiredCorrect: number;
+  challenges: Challenge[];
+};
 
-export type BestScores = Record<string, number>;
+export type KeyboardKeyState = 'idle' | 'correct' | 'wrong' | 'expected' | 'next';
+
+export type LastMistake = {
+  actual: string;
+  expected: string;
+  index: number;
+  challengeId: string;
+};
+
+export type BestScores = Record<StageId, number>;
+
+export type SaveData = {
+  best: Partial<BestScores>;
+  unlockedStage: number;
+};
+
+export type GameStatus = 'playing' | 'stage-complete' | 'course-complete';
 
 export type GameState = {
-  level: Level;
-  levelIndex: number;
-  player: Point;
-  moves: number;
+  stages: Stage[];
+  stageIndex: number;
+  challengeIndex: number;
+  typed: string;
+  score: number;
+  streak: number;
+  correctInStage: number;
+  mistakes: number;
   status: GameStatus;
   message: string;
-  best: BestScores;
-  history: Point[];
+  lastMistake: LastMistake | null;
+  lastCorrectKey: string | null;
+  best: Partial<BestScores>;
+  unlockedStage: number;
+  seed: number;
 };
 
-export type MoveKey =
-  | 'ArrowUp'
-  | 'KeyW'
-  | 'ArrowDown'
-  | 'KeyS'
-  | 'ArrowLeft'
-  | 'KeyA'
-  | 'ArrowRight'
-  | 'KeyD';
+export type TypeKeyAction = {
+  type: 'TYPE_KEY';
+  key: string;
+};
 
-export type MoveAction = {
-  type: 'MOVE';
-  key: MoveKey;
+export type BackspaceAction = {
+  type: 'BACKSPACE';
+};
+
+export type NextChallengeAction = {
+  type: 'NEXT_CHALLENGE';
+};
+
+export type NextStageAction = {
+  type: 'NEXT_STAGE';
+};
+
+export type SetStageAction = {
+  type: 'SET_STAGE';
+  stageIndex: number;
 };
 
 export type ResetAction = {
   type: 'RESET';
-  level?: Level;
-  levelIndex?: number;
+  seed?: number;
+  save?: SaveData;
 };
 
-export type NextLevelAction = {
-  type: 'NEXT_LEVEL';
-  level: Level;
-  levelIndex: number;
-};
-
-export type GameAction = MoveAction | ResetAction | NextLevelAction;
+export type GameAction =
+  | TypeKeyAction
+  | BackspaceAction
+  | NextChallengeAction
+  | NextStageAction
+  | SetStageAction
+  | ResetAction;
 
 export type SerializedGameState = {
-  levelId: string;
-  levelIndex: number;
-  player: Point;
-  moves: number;
+  stageId: StageId;
+  stageIndex: number;
+  challengeId: string;
+  kana: string;
+  romaji: string;
+  typed: string;
+  remaining: string;
+  score: number;
+  streak: number;
+  correctInStage: number;
+  requiredCorrect: number;
+  mistakes: number;
   status: GameStatus;
   message: string;
-  best: BestScores;
-  history: Point[];
+  lastMistake: LastMistake | null;
+  lastCorrectKey: string | null;
+  unlockedStage: number;
+  best: Partial<BestScores>;
 };
 
 export type HarnessSnapshot = SerializedGameState & {
-  board: {
-    columns: number;
-    rows: number;
-    cellCount: number;
-    activeCell: string;
+  keyboard: Record<string, KeyboardKeyState>;
+  progress: {
+    stagePercent: number;
+    coursePercent: number;
   };
 };
 
 export type HarnessResetInput =
   | number
-  | string
   | {
-      level: Level;
-      levelIndex?: number;
+      seed?: number;
+      save?: SaveData;
     }
   | undefined;
 
 export type GameHarness = {
   snapshot(): HarnessSnapshot;
   dispatch(action: GameAction): HarnessSnapshot;
-  press(key: MoveKey): HarnessSnapshot;
+  press(key: string): HarnessSnapshot;
   reset(seedOrState?: HarnessResetInput): HarnessSnapshot;
-  loadLevel(level: Level): HarnessSnapshot;
+  loadStage(stageIndex: number): HarnessSnapshot;
 };

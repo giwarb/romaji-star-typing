@@ -1,9 +1,9 @@
 {
-  "name": "html-game-ai-harness",
+  "name": "romaji-star-typing",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "HTML + TypeScript game template with deterministic tests, Playwright autonomy harness, and GitHub Pages CI/CD.",
+  "description": "A romaji typing practice game for Japanese third graders, built with TypeScript and a Playwright AI harness.",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",

@@ -1,134 +1,194 @@
 import './styles.css';
-import { createInitialState, keyboardToAction, reduceGame, serializeState } from './core/game';
-import { generateSeededLevel, getLevel } from './core/levels';
-import type { GameAction, GameHarness, HarnessSnapshot, Level, MoveKey } from './core/types';
-import { loadSave, saveBest } from './platform/storage';
+import {
+  currentChallenge,
+  currentStage,
+  keyboardRows,
+  keyboardState,
+  reduceGame,
+  serializeState,
+  stageProgress,
+  createInitialState,
+} from './core/game';
+import type { GameAction, GameHarness, HarnessSnapshot } from './core/types';
+import { loadSave, saveProgress } from './platform/storage';
 
-const board = getElement('#board', HTMLDivElement);
-const levelLabel = getElement('[data-testid="level-label"]', HTMLElement);
-const moveLabel = getElement('[data-testid="move-label"]', HTMLElement);
-const bestLabel = getElement('[data-testid="best-label"]', HTMLElement);
-const resetButton = getElement('[data-testid="reset-button"]', HTMLButtonElement);
+const app = getElement('#app', HTMLElement);
+const stageTitle = getElement('[data-testid="stage-title"]', HTMLElement);
+const stageDescription = getElement('[data-testid="stage-description"]', HTMLElement);
+const stageBadge = getElement('[data-testid="stage-badge"]', HTMLElement);
+const kanaCard = getElement('[data-testid="kana-card"]', HTMLElement);
+const kanaText = getElement('[data-testid="kana-text"]', HTMLElement);
+const romajiTarget = getElement('[data-testid="romaji-target"]', HTMLElement);
+const hintText = getElement('[data-testid="hint-text"]', HTMLElement);
+const messageText = getElement('[data-testid="message"]', HTMLElement);
+const scoreLabel = getElement('[data-testid="score-label"]', HTMLElement);
+const streakLabel = getElement('[data-testid="streak-label"]', HTMLElement);
+const mistakeLabel = getElement('[data-testid="mistake-label"]', HTMLElement);
+const stageProgressBar = getElement('[data-testid="stage-progress"]', HTMLElement);
+const courseProgressBar = getElement('[data-testid="course-progress"]', HTMLElement);
+const keyboard = getElement('[data-testid="keyboard"]', HTMLElement);
+const stageRail = getElement('[data-testid="stage-rail"]', HTMLElement);
 const nextButton = getElement('[data-testid="next-button"]', HTMLButtonElement);
-const seedButton = getElement('[data-testid="seed-button"]', HTMLButtonElement);
+const resetButton = getElement('[data-testid="reset-button"]', HTMLButtonElement);
 
-let state = createInitialState({
-  level: getLevel(0),
-  levelIndex: 0,
-  best: loadSave().best,
-});
+let state = createInitialState({ save: loadSave() });
 
 render();
 
 window.addEventListener('keydown', (event) => {
-  const action = keyboardToAction(event.code);
-  if (action) {
+  if (event.key === 'Backspace') {
     event.preventDefault();
-    dispatch(action);
+    dispatch({ type: 'BACKSPACE' });
+    return;
+  }
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    dispatch({ type: 'NEXT_CHALLENGE' });
+    return;
+  }
+  if (/^[a-z]$/i.test(event.key)) {
+    event.preventDefault();
+    dispatch({ type: 'TYPE_KEY', key: event.key });
   }
 });
 
-resetButton.addEventListener('click', () => dispatch({ type: 'RESET' }));
 nextButton.addEventListener('click', () => {
-  const levelIndex = state.levelIndex + 1;
-  dispatch({ type: 'NEXT_LEVEL', level: getLevel(levelIndex), levelIndex });
+  dispatch(state.status === 'playing' ? { type: 'NEXT_CHALLENGE' } : { type: 'NEXT_STAGE' });
 });
-seedButton.addEventListener('click', () => {
-  const seed = Date.now() % 10_000;
-  dispatch({ type: 'NEXT_LEVEL', level: generateSeededLevel(seed), levelIndex: state.levelIndex });
-});
+resetButton.addEventListener('click', () => dispatch({ type: 'RESET' }));
 
 function dispatch(action: GameAction): HarnessSnapshot {
   state = reduceGame(state, action);
-  saveBest(state.best);
+  saveProgress({
+    best: state.best,
+    unlockedStage: state.unlockedStage,
+  });
   render();
   return snapshot();
 }
 
 function render(): void {
-  board.style.setProperty('--columns', String(state.level.width));
-  board.style.setProperty('--rows', String(state.level.height));
-  board.setAttribute('data-status', state.status);
-  board.setAttribute('aria-label', `${state.level.name}: ${state.message}`);
-  board.replaceChildren(...createCells());
+  const stage = currentStage(state);
+  const challenge = currentChallenge(state);
+  const progress = stageProgress(state);
 
-  levelLabel.textContent = state.level.name;
-  moveLabel.textContent = `Moves ${state.moves}`;
-  bestLabel.textContent = `Best ${state.best[state.level.id] ?? '-'}`;
+  app.dataset.status = state.status;
+  kanaCard.dataset.result = state.lastMistake ? 'wrong' : state.lastCorrectKey ? 'correct' : 'idle';
+  stageTitle.textContent = stage.name;
+  stageDescription.textContent = stage.description;
+  stageBadge.textContent = stage.badge;
+  kanaText.textContent = challenge.kana;
+  hintText.textContent = challenge.hint;
+  messageText.textContent = state.message;
+  scoreLabel.textContent = String(state.score);
+  streakLabel.textContent = `${state.streak}`;
+  mistakeLabel.textContent = `${state.mistakes}`;
+  stageProgressBar.style.inlineSize = `${Math.round(progress.stagePercent * 100)}%`;
+  courseProgressBar.style.inlineSize = `${Math.round(progress.coursePercent * 100)}%`;
+  nextButton.textContent = state.status === 'playing' ? 'つぎの問題' : 'つぎのステージ';
+
+  renderRomaji(challenge.romaji, state.typed);
+  renderKeyboard();
+  renderStages();
+  burstStars();
 }
 
-function createCells(): HTMLDivElement[] {
-  const cells: HTMLDivElement[] = [];
-  for (let y = 0; y < state.level.height; y += 1) {
-    for (let x = 0; x < state.level.width; x += 1) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.x = String(x);
-      cell.dataset.y = String(y);
-      cell.dataset.testid = `cell-${x}-${y}`;
-      cell.setAttribute('role', 'gridcell');
+function renderRomaji(target: string, typed: string): void {
+  romajiTarget.replaceChildren(
+    ...target.split('').map((letter, index) => {
+      const span = document.createElement('span');
+      span.textContent = letter;
+      if (index < typed.length) {
+        span.className = 'typed';
+      } else if (index === typed.length) {
+        span.className = state.lastMistake ? 'next wrong-next' : 'next';
+      }
+      return span;
+    }),
+  );
+}
 
-      if (state.level.goal.x === x && state.level.goal.y === y) {
-        cell.classList.add('goal');
-        cell.textContent = 'G';
-      }
-      if (state.level.hazards.some((hazard) => hazard.x === x && hazard.y === y)) {
-        cell.classList.add('hazard');
-        cell.textContent = '!';
-      }
-      if (state.player.x === x && state.player.y === y) {
-        cell.classList.add('player');
-        cell.textContent = 'P';
-      }
-      cells.push(cell);
-    }
+function renderKeyboard(): void {
+  const states = keyboardState(state);
+  keyboard.replaceChildren(
+    ...keyboardRows.map((row) => {
+      const rowElement = document.createElement('div');
+      rowElement.className = 'key-row';
+      rowElement.replaceChildren(
+        ...row.split('').map((letter) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `key ${states[letter]}`;
+          button.dataset.key = letter;
+          button.dataset.testid = `key-${letter}`;
+          button.textContent = letter;
+          button.addEventListener('click', () => dispatch({ type: 'TYPE_KEY', key: letter }));
+          return button;
+        }),
+      );
+      return rowElement;
+    }),
+  );
+}
+
+function renderStages(): void {
+  stageRail.replaceChildren(
+    ...state.stages.map((stage, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'stage-chip';
+      button.dataset.active = String(index === state.stageIndex);
+      button.dataset.locked = String(index > state.unlockedStage);
+      button.textContent = `${index + 1}. ${stage.badge}`;
+      button.disabled = index > state.unlockedStage;
+      button.addEventListener('click', () => dispatch({ type: 'SET_STAGE', stageIndex: index }));
+      return button;
+    }),
+  );
+}
+
+function burstStars(): void {
+  if (!state.lastCorrectKey || state.typed.length === 0) {
+    return;
   }
-  return cells;
+  const star = document.createElement('span');
+  star.className = 'star-pop';
+  star.textContent = ['★', '✦', '✧'][state.streak % 3];
+  kanaCard.append(star);
+  window.setTimeout(() => star.remove(), 700);
 }
 
 function snapshot(): HarnessSnapshot {
   return {
     ...serializeState(state),
-    board: {
-      columns: state.level.width,
-      rows: state.level.height,
-      cellCount: board.children.length,
-      activeCell: `${state.player.x},${state.player.y}`,
-    },
+    keyboard: keyboardState(state),
+    progress: stageProgress(state),
   };
 }
 
 const harness: GameHarness = {
   snapshot,
   dispatch,
-  press(key: MoveKey) {
-    return dispatch({ type: 'MOVE', key });
+  press(key: string) {
+    return dispatch({ type: 'TYPE_KEY', key });
   },
   reset(seedOrState) {
-    if (typeof seedOrState === 'number' || typeof seedOrState === 'string') {
+    if (typeof seedOrState === 'number') {
       state = createInitialState({
-        level: generateSeededLevel(seedOrState),
-        levelIndex: state.levelIndex,
-        best: state.best,
-      });
-    } else if (seedOrState?.level) {
-      state = createInitialState({
-        level: seedOrState.level,
-        levelIndex: seedOrState.levelIndex ?? state.levelIndex,
-        best: state.best,
+        seed: seedOrState,
+        save: { best: state.best, unlockedStage: state.unlockedStage },
       });
     } else {
       state = createInitialState({
-        level: state.level,
-        levelIndex: state.levelIndex,
-        best: state.best,
+        seed: seedOrState?.seed ?? state.seed,
+        save: seedOrState?.save ?? { best: state.best, unlockedStage: state.unlockedStage },
       });
     }
     render();
     return snapshot();
   },
-  loadLevel(level: Level) {
-    state = createInitialState({ level, levelIndex: state.levelIndex, best: state.best });
+  loadStage(stageIndex: number) {
+    state = reduceGame(state, { type: 'SET_STAGE', stageIndex });
     render();
     return snapshot();
   },

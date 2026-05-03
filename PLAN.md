@@ -2,59 +2,66 @@
 
 ## Game
 
-Pulse Runner is a browser-only grid game used as a seed project for AI-assisted game development. The sample is small by design: it proves the loop, controls, persistence, testing, Playwright harness, evals, and GitHub Pages deployment.
+ローマ字スタータイピング is a browser-only typing practice game for Japanese third graders who are just starting romaji.
 
 ## Player Goal
 
-Move the player from the start tile to the pulse gate while avoiding hazards and minimizing moves.
+Type the romaji shown by each hiragana prompt, collect score and combo stars, and clear stages from easy vowel sounds to short words.
 
 ## Main Loop
 
-1. Render the current level.
-2. Accept keyboard or harness input.
-3. Apply a pure state transition.
-4. Render the new state.
-5. Persist best scores in `localStorage`.
-6. End in win or fail state, or continue playing.
+1. Show one hiragana prompt and its romaji slots.
+2. Highlight the next expected key on the on-screen keyboard.
+3. Accept physical keyboard, on-screen keyboard, or harness input.
+4. If correct, fill the next slot, pulse the key, add score, and show a small celebration effect.
+5. If wrong, show the pressed key in red and the expected key in yellow/green with a supportive message.
+6. When the romaji is complete, award bonus score and move to the next problem.
+7. When enough problems are completed, unlock the next stage.
+8. Persist best scores and unlocked stages in `localStorage`.
 
 ## Inputs And Controls
 
-- Arrow keys and WASD move one tile.
-- Reset restarts the current level.
-- Next advances through deterministic levels.
-- Seeded Run creates a deterministic generated level.
-- `window.__GAME_HARNESS__` mirrors those controls for Playwright and AI agents.
+- A-Z keys type letters.
+- Backspace removes the last typed letter.
+- Enter or Space moves to the next prompt when desired.
+- On-screen keyboard buttons mirror physical key input.
+- `window.__GAME_HARNESS__` exposes `snapshot`, `dispatch`, `press`, `reset`, and `loadStage`.
 
 ## Win And Fail States
 
-- Win: player reaches the goal tile.
-- Fail: player enters a hazard tile.
-- Wall collision: player stays in place and receives feedback.
+- There is no hard fail state. Mistakes reset combo and add guidance.
+- Stage complete: required number of prompts typed.
+- Course complete: final word stage completed.
 
 ## Progression And Difficulty
 
-- Shipped levels must be deterministic and solvable.
-- New levels require unit-level validation and browser-level playability checks.
-- Seeded levels must be reproducible for debugging.
+1. Vowels: あいうえお.
+2. か・さ・た rows.
+3. な・は・ま・ら rows.
+4. Dakuten and handakuten.
+5. Small ゃゅょ combinations.
+6. Short words such as ねこ, そら, きゅうしょく.
+
+The generator uses deterministic challenge ordering so AI and tests can reproduce sessions.
 
 ## Visual Direction
 
-Clear arcade board, high contrast tiles, readable HUD, no decorative complexity until a specific game concept needs it.
+Warm, encouraging, classroom-friendly. Large kana, clear romaji slots, tactile key states, short supportive messages, and visible feedback for both correct and wrong input.
 
 ## Stack And Hosting
 
 - Static HTML + TypeScript.
 - Vite build.
 - Vitest for model tests.
-- Playwright for browser checks and artifacts.
+- Playwright for browser and harness checks.
 - `localStorage` only for persistence.
 - GitHub Actions for CI.
 - GitHub Pages for deployment.
 
 ## Milestones
 
-1. Keep the template green: `npm run check`.
-2. Replace or expand the sample game only after defining the new game loop here.
-3. Add reusable visual prompts under `.prompts/` before generating asset batches.
-4. Add deterministic eval metrics for any hard game-logic or level-design task.
-5. Use PR review and bug triage templates before merging larger game changes.
+1. Green harness: `npm run check`.
+2. Core course stages and deterministic ordering.
+3. Correct and wrong key visual feedback.
+4. Stage unlock and persistence.
+5. Screenshot artifacts for visual tuning.
