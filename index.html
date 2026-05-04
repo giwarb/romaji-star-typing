@@ -3,71 +3,119 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="小学3年生向けのローマ字タイピング練習ゲーム。"
-    />
+    <meta name="description" content="小学生向けのローマ字タワーディフェンスタイピングゲーム。" />
     <title>ローマ字スタータイピング</title>
   </head>
   <body>
     <main id="app" aria-label="ローマ字スタータイピング">
+      <section class="start-panel" data-testid="start-panel">
+        <div class="start-card">
+          <p class="eyebrow">Mode Select</p>
+          <h2>出撃モードを選ぶ</h2>
+          <p class="start-copy">学校で習うローマ字表ベースの入力で祭壇を防衛する。上級は敵の進軍と出現が最初から速い。</p>
+          <div class="start-actions">
+            <button type="button" class="start-button" data-testid="start-normal">
+              <strong>NORMAL</strong>
+              <span>通常の進軍速度で開始</span>
+            </button>
+            <button type="button" class="start-button advanced" data-testid="start-advanced">
+              <strong>ADVANCED</strong>
+              <span>最初から高速進軍の上級モード</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section class="game-shell">
         <header class="topbar">
-          <div>
-            <p class="eyebrow">Romaji Typing Garden</p>
+          <div class="topbar-title">
+            <p class="eyebrow">Romaji Tower Defense RPG</p>
             <h1>ローマ字スタータイピング</h1>
+            <p class="hero-copy">最初の一文字で敵をロックオン。守護者のアストラルバーストを切り札に、ボスWaveを突破しよう。</p>
           </div>
           <div class="stats" aria-label="スコア">
+            <span>Wave <strong data-testid="wave-label">1</strong></span>
             <span>Score <strong data-testid="score-label">0</strong></span>
-            <span>Combo <strong data-testid="streak-label">0</strong></span>
-            <span>Miss <strong data-testid="mistake-label">0</strong></span>
+            <span>Best <strong data-testid="best-label">0</strong></span>
+            <span>Mode <strong data-testid="mode-label">NORMAL</strong></span>
           </div>
         </header>
 
-        <nav class="stage-rail" data-testid="stage-rail" aria-label="ステージ"></nav>
-
-        <section class="progress-area" aria-label="進みぐあい">
-          <div>
-            <span>ステージ</span>
-            <div class="meter"><span data-testid="stage-progress"></span></div>
+        <section class="battle-section" aria-label="バトルフィールド">
+          <div class="wave-hud">
+            <span class="wave-hud-stage" data-testid="stage-title">Wave 1</span>
+            <div class="wave-progress-track">
+              <div class="wave-progress-fill" data-testid="wave-progress"></div>
+            </div>
+            <span class="wave-hud-kills" data-testid="wave-kills-label">0 / 8</span>
           </div>
-          <div>
-            <span>ぜんたい</span>
-            <div class="meter course"><span data-testid="course-progress"></span></div>
+
+          <div class="battle-field-wrap">
+            <div class="battle-lane" data-testid="battle-lane" aria-label="バトルレーン"></div>
+            <div class="base-zone" data-testid="base-zone" aria-label="守護者の祭壇">
+              <div class="hp-display" data-testid="hp-display" aria-label="残りHP"></div>
+              <div class="buddy-figure" data-testid="buddy-figure" data-form="sentinel" data-ready="false">
+                <span class="buddy-halo"></span>
+                <span class="buddy-core">
+                  <i class="eye left"></i>
+                  <i class="eye right"></i>
+                  <i class="mouth"></i>
+                </span>
+              </div>
+              <p class="buddy-name" data-testid="buddy-name">GUARDIAN</p>
+              <div class="buddy-charge" aria-label="アストラルバーストチャージ">
+                <div class="buddy-charge-track">
+                  <div class="buddy-charge-fill" data-testid="buddy-charge-fill"></div>
+                </div>
+                <span class="buddy-charge-label" data-testid="buddy-charge-label">0%</span>
+              </div>
+              <button type="button" class="buddy-skill-button" data-testid="buddy-skill-button">バースト充填中</button>
+            </div>
+          </div>
+
+          <div class="effect-layer" data-testid="effect-layer" aria-hidden="true"></div>
+        </section>
+
+        <section class="target-info" data-testid="kana-card" aria-label="現在のターゲット">
+          <span class="target-kana" data-testid="kana-text"></span>
+          <div class="target-romaji" data-testid="romaji-target" aria-label="ローマ字"></div>
+          <p class="target-hint" data-testid="hint-text"></p>
+        </section>
+
+        <p class="message" data-testid="message" aria-live="polite">守護者の祭壇を守れ。最初の一文字でロックオンして戦う。</p>
+
+        <section class="result-panel" data-testid="result-panel" hidden>
+          <div class="result-head">
+            <strong data-testid="result-rank">-</strong>
+            <div>
+              <h3 data-testid="result-title">ゲームオーバー</h3>
+              <p data-testid="result-subtitle">また挑戦しよう！</p>
+            </div>
+          </div>
+          <div class="result-stars" data-testid="result-stars" aria-label="獲得スター"></div>
+          <div class="result-grid">
+            <span>Score <strong data-testid="result-score">0</strong></span>
+            <span>Wave <strong data-testid="result-level">1</strong></span>
+            <span>Accuracy <strong data-testid="result-accuracy">100%</strong></span>
+            <span>Max Combo <strong data-testid="result-max-combo">0</strong></span>
+            <span>Best Score <strong data-testid="result-best-score">0</strong></span>
+            <span>Best Wave <strong data-testid="result-best-level">1</strong></span>
           </div>
         </section>
 
-        <section class="lesson-panel">
-          <div class="stage-info">
-            <span class="badge" data-testid="stage-badge">Seed</span>
-            <div>
-              <h2 data-testid="stage-title">ステージ</h2>
-              <p data-testid="stage-description">説明</p>
-            </div>
+        <section class="keyboard-wrap" aria-label="キーボード">
+          <div class="keyboard-help">
+            <span><i class="dot next-dot"></i>next</span>
+            <span><i class="dot correct-dot"></i>hit</span>
+            <span><i class="dot wrong-dot"></i>miss</span>
+            <span>Guard charge on correct keys</span>
           </div>
-
-          <section class="kana-card" data-testid="kana-card">
-            <p class="prompt-label">このひらがなをローマ字で打とう</p>
-            <div class="kana" data-testid="kana-text">あ</div>
-            <div class="romaji" data-testid="romaji-target" aria-label="ローマ字"></div>
-            <p class="hint" data-testid="hint-text"></p>
-          </section>
-
-          <p class="message" data-testid="message" aria-live="polite"></p>
-
-          <section class="keyboard-wrap" aria-label="キーボード">
-            <div class="keyboard-help">
-              <span><i class="dot next-dot"></i>つぎ</span>
-              <span><i class="dot correct-dot"></i>せいかい</span>
-              <span><i class="dot wrong-dot"></i>おしたキー</span>
-            </div>
-            <div class="keyboard" data-testid="keyboard"></div>
-          </section>
+          <div class="keyboard" data-testid="keyboard"></div>
         </section>
 
         <footer class="controls">
-          <button type="button" data-testid="next-button">つぎの問題</button>
-          <button type="button" data-testid="reset-button">リセット</button>
+          <button type="button" data-testid="next-button">ロックオン解除</button>
+          <button type="button" data-testid="reset-button">さいしょから</button>
         </footer>
       </section>
     </main>

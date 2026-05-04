@@ -1,4 +1,4 @@
-import type { SaveData } from '../core/types';
+﻿import type { SaveData } from '../core/types';
 
 const storageKey = 'romaji-typing-garden:save';
 
@@ -11,10 +11,23 @@ export function loadSave(storage: StorageAdapter = localStorage): SaveData {
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<SaveData>;
+    const parsed = JSON.parse(raw) as Partial<SaveData> & {
+      best?: Record<string, number>;
+      unlockedStage?: number;
+    };
+
+    if (typeof parsed.bestScore === 'number' || typeof parsed.bestLevel === 'number') {
+      return {
+        bestScore: safeNumber(parsed.bestScore, 0),
+        bestLevel: Math.max(1, safeNumber(parsed.bestLevel, 1)),
+      };
+    }
+
+    const legacyBestScore = parsed.best ? Math.max(0, ...Object.values(parsed.best), 0) : 0;
+    const legacyBestLevel = typeof parsed.unlockedStage === 'number' ? Math.max(1, parsed.unlockedStage + 1) : 1;
     return {
-      best: parsed.best && typeof parsed.best === 'object' ? parsed.best : {},
-      unlockedStage: Number.isInteger(parsed.unlockedStage) ? parsed.unlockedStage ?? 0 : 0,
+      bestScore: legacyBestScore,
+      bestLevel: legacyBestLevel,
     };
   } catch {
     return emptySave();
@@ -30,7 +43,11 @@ export function clearSave(storage: StorageAdapter = localStorage): void {
 }
 
 export function emptySave(): SaveData {
-  return { best: {}, unlockedStage: 0 };
+  return { bestScore: 0, bestLevel: 1 };
+}
+
+function safeNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 export { storageKey };

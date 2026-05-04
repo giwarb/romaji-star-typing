@@ -1,67 +1,102 @@
-# PLAN.md
+# PLAN.md - Romanji Star Typing
 
-## Game
+## Goal
 
-ローマ字スタータイピング is a browser-only typing practice game for Japanese third graders who are just starting romaji.
+Defend the shrine in a typing tower-defense game.
+Enemies push in from the left, pressure rises every wave, and a boss appears every 3 waves.
+The player chooses Normal or Advanced at the start. Advanced mode dramatically increases speed, spawn pace, and simultaneous enemy pressure.
 
-## Player Goal
+## Core Loop
 
-Type the romaji shown by each hiragana prompt, collect score and combo stars, and clear stages from easy vowel sounds to short words.
+1. Choose a mode before the run starts.
+2. Enemies spawn on the left and march toward the shrine on the right.
+3. Typing the first matching letter locks onto the most dangerous enemy.
+4. Keep typing that enemy's romaji to defeat it. Bosses require multiple word phases.
+5. Correct typing charges Astral Burst. When full, Enter freezes every active enemy for a few seconds.
+6. If an enemy reaches the shrine, one HP is lost. At 0 HP the run ends.
+7. Clear the wave target, and on boss waves defeat the boss as well, to advance.
 
-## Main Loop
+## Wave And Difficulty
 
-1. Show one hiragana prompt and its romaji slots.
-2. Highlight the next expected key on the on-screen keyboard.
-3. Accept physical keyboard, on-screen keyboard, or harness input.
-4. If correct, fill the next slot, pulse the key, add score, and show a small celebration effect.
-5. If wrong, show the pressed key in red and the expected key in yellow/green with a supportive message.
-6. When the romaji is complete, award bonus score and move to the next problem.
-7. When enough problems are completed, unlock the next stage.
-8. Persist best scores and unlocked stages in `localStorage`.
+| Mode | Modifier |
+|------|----------|
+| Normal | baseline |
+| Advanced | spawn interval x0.45 / movement speed x16 / max concurrent +3 |
 
-## Inputs And Controls
+| Wave | Band | Spawn Interval | Max Concurrent | Notes |
+|------|------|----------------|----------------|-------|
+| 1-2 | vowels | 4200ms to 3800ms | 4 | onboarding |
+| 3 | k-row | around 3600ms | 5 | boss wave |
+| 4-5 | k-row / mixed-basic | 3400ms to 3000ms | 4-5 | crowd control starts |
+| 6 | mixed-basic / dakuten | around 2840ms | 5-6 | boss wave |
+| 7-8 | dakuten | 2800ms to 2600ms | 5 | sustained pressure |
+| 9 | combo | around 2440ms | 6-7 | boss wave |
+| 10-11 | combo / words | 2240ms to 1840ms | 5-7 | word band |
+| 12+ | words | 1840ms and below | 6-8 | late boss rush |
 
-- A-Z keys type letters.
-- Backspace removes the last typed letter.
-- Enter or Space moves to the next prompt when desired.
-- On-screen keyboard buttons mirror physical key input.
-- `window.__GAME_HARNESS__` exposes `snapshot`, `dispatch`, `press`, `reset`, and `loadStage`.
+Wave target: `waveTarget = 6 + wave * 2`
+Base enemy speed: `0.036 + wave * 0.004` with mode tuning applied.
 
-## Win And Fail States
+## Romanization
 
-- There is no hard fail state. Mistakes reset combo and add guidance.
-- Stage complete: required number of prompts typed.
-- Course complete: final word stage completed.
+- Use school-style Japanese romanization close to Kunrei-shiki.
+- Examples: `si`, `ti`, `tu`, `hu`, `zi`, `sya`, `syu`, `syo`, `tya`, `tyu`, `tyo`
+- Keep long words and boss phrases consistent with the same rules.
 
-## Progression And Difficulty
+## Bosses
 
-1. Vowels: あいうえお.
-2. か・さ・た rows.
-3. な・は・ま・ら rows.
-4. Dakuten and handakuten.
-5. Small ゃゅょ combinations.
-6. Short words such as ねこ, そら, きゅうしょく.
+- A boss spawns first every 3 waves.
+- Bosses have multiple word phases.
+- Completing one word advances the boss to the next phrase.
+- Boss waves still spawn normal enemies, so prioritization matters.
+- Meeting the kill target alone is not enough on a boss wave; the boss must also be defeated.
 
-The generator uses deterministic challenge ordering so AI and tests can reproduce sessions.
+## Guardian
+
+- A nameless guardian stands beside the shrine.
+- `data-mood`: `happy` / `alert` / `hurt`
+- `data-form`: `sentinel` / `knight` / `astral`
+- Correct typing charges Astral Burst.
+- Astral Burst freezes every active enemy for a few seconds.
+
+## Controls
+
+| Action | Effect |
+|--------|--------|
+| Mode buttons on start screen | Start in Normal or Advanced |
+| Letter keys | Acquire lock or type romaji |
+| Backspace | Delete one letter, or release lock if empty |
+| Enter | Cast Astral Burst at 100% charge |
+| Release Lock button / Space | Manually drop the current target |
+| Reset button | Restart in the current mode |
+| On-screen keyboard | Tap input |
+
+## Save Data
+
+- `bestScore`: highest score
+- `bestLevel`: highest wave reached
 
 ## Visual Direction
 
-Warm, encouraging, classroom-friendly. Large kana, clear romaji slots, tactile key states, short supportive messages, and visible feedback for both correct and wrong input.
+- Dark navy battlefield
+- Guardian should read as an RPG shrine defender, not a mascot
+- Bosses should feel heavy through silhouette, labels, and phase display
+- Burst and boss breaks should use large banner feedback
+- Start flow should open on the mode-selection overlay
 
-## Stack And Hosting
+## Stack
 
-- Static HTML + TypeScript.
-- Vite build.
-- Vitest for model tests.
-- Playwright for browser and harness checks.
-- `localStorage` only for persistence.
-- GitHub Actions for CI.
-- GitHub Pages for deployment.
+- TypeScript + Vite
+- Vitest + Playwright
+- localStorage only
 
 ## Milestones
 
-1. Green harness: `npm run check`.
-2. Core course stages and deterministic ordering.
-3. Correct and wrong key visual feedback.
-4. Stage unlock and persistence.
-5. Screenshot artifacts for visual tuning.
+- [x] Full typing tower-defense rewrite
+- [x] Guardian burst support skill
+- [x] Expanded challenge bands including 72 word entries
+- [x] Boss waves and multi-phase bosses
+- [x] Start-of-run Normal / Advanced selection
+- [x] School-style romanization
+- [ ] Stronger boss-specific presentation and impact
+- [ ] Better mobile boss UI
